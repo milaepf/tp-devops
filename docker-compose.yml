@@ -1,0 +1,53 @@
+services:
+  backend:
+    build:
+      context: ./simpleapi
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/db
+      SPRING_DATASOURCE_USERNAME: ${DATABASE_USER:-usr}
+      SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD:-pwd}
+    networks:
+      - frontend-net
+      - backend-net
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+
+  database:
+    build:
+      context: ./database
+    environment:
+      POSTGRES_DB: db
+      POSTGRES_USER: ${DATABASE_USER:-usr}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-pwd}
+    volumes:
+      - database-data:/var/lib/postgresql/data
+    networks:
+      - backend-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  httpd:
+    build:
+      context: ./http-server
+    ports:
+      - "80:80"
+    networks:
+      - frontend-net
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  frontend-net:
+  backend-net:
+    internal: true
+
+volumes:
+  database-data:
+    name: milaepf-db-data
