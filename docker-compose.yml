@@ -3,9 +3,9 @@ services:
     build:
       context: ./simpleapi
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/db
-      SPRING_DATASOURCE_USERNAME: ${DATABASE_USER:-usr}
-      SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD:-pwd}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     networks:
       - frontend-net
       - backend-net
@@ -18,9 +18,9 @@ services:
     build:
       context: ./database
     environment:
-      POSTGRES_DB: db
-      POSTGRES_USER: ${DATABASE_USER:-usr}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-pwd}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - database-data:/var/lib/postgresql/data
     networks:
