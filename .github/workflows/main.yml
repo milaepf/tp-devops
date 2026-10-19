@@ -1,14 +1,30 @@
-
-name: First workflow
+name: CI devops 2025
 
 on:
+  # Lancer la CI lors d'un push sur main ou develop
   push:
+    branches:
+      - main
+      - develop
   pull_request:
 
 jobs:
-  first-job:
-    runs-on: ubuntu-latest
+  test-backend:
+    runs-on: ubuntu-24.04
 
     steps:
-      - name: Display a message
-        run: echo "Hello from GitHub Actions!"
+      # Récupérer le code du dépôt
+      - uses: actions/checkout@v4
+
+      # Installer le JDK 21 et activer le cache Maven
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: simpleapi/pom.xml
+
+      # Construire l'application et exécuter les tests
+      - name: Build and test with Maven
+        run: mvn --file simpleapi/pom.xml clean verify
