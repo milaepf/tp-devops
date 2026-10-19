@@ -1,0 +1,14 @@
+
+name: First workflow
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  first-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Display a message
+        run: echo "Hello from GitHub Actions!"
