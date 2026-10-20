@@ -1,79 +1,118 @@
 name: CI devops 2025
 
 on:
-  # Lancer la CI lors d'un push sur main ou develop
   push:
     branches:
       - main
       - develop
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test-backend:
-    runs-on: ubuntu-24.04
-
-    steps:
-      # Récupérer le code du dépôt
-      - uses: actions/checkout@v4
-
-      # Installer le JDK 21 et activer le cache Maven
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: maven
-
-      # Construire l'application et exécuter les tests
-      - name: Build and test with Maven
-        run: mvn clean verify --file ./simpleapi/pom.xml 
-
-      # Analyser la qualité et la sécurité du code avec SonarCloud
-      - name: SonarCloud Analysis
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=milaepf_tp-devops -Dsonar.organization=milaepf -Dsonar.host.url=https://sonarcloud.io -Dsonar.token=${{ secrets.SONAR_TOKEN }}  --file ./simpleapi/pom.xml
-
-
-  # Partie CD : construire et publier les images Docker
-  build-and-push-docker-image:
-    needs: test-backend
     runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Préparer l'environnement de construction Docker
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: simpleapi/pom.xml
+
+      - name: Generate version
+        id: version
+        run: |
+          echo "version=1.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Set Maven version
+        run: |
+          mvn -B versions:set \
+            -DnewVersion=${{ steps.version.outputs.version }} \
+            -DgenerateBackupPoms=false \
+            --file ./simpleapi/pom.xml
+
+      - name: Build and test with Maven
+        run: mvn -B clean verify --file ./simpleapi/pom.xml
+
+      - name: SonarCloud Analysis
+        run: mvn -B verify
+            org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+            -Dsonar.projectKey=milaepf_tp-devops
+            -Dsonar.organization=milaepf
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.token=$SONAR_TOKEN
+            -Dsonar.qualitygate.wait=true
+            --file ./simpleapi/pom.xml
+
+  build-and-push-docker-image:
+    needs: test-backend
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Se connecter uniquement pour publier depuis main
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Generate version
+        id: version
+        run: |
+          echo "version=1.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Set Maven version
+        run: |
+          mvn -B versions:set \
+            -DnewVersion=${{ steps.version.outputs.version }} \
+            -DgenerateBackupPoms=false \
+            --file ./simpleapi/pom.xml
+
+      - name: Build application
+        run: mvn -B clean package -DskipTests --file ./simpleapi/pom.xml
+
       - name: Login to Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Construire l'image de l'API Java
-      - name: Build image and push backend
+      - name: Build and push backend
         uses: docker/build-push-action@v6
         with:
           context: ./simpleapi
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simpleapi:latest
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simpleapi:${{ steps.version.outputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simpleapi:latest
+          push: true
 
-      # Construire l'image de la base de données
-      - name: Build image and push database
+      - name: Build and push database
         uses: docker/build-push-action@v6
         with:
           context: ./database
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:latest
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:${{ steps.version.outputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:latest
+          push: true
 
-      # Construire l'image du serveur HTTP Apache
-      - name: Build image and push httpd
+      - name: Build and push httpd
         uses: docker/build-push-action@v6
         with:
           context: ./http-server
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-http-server:latest
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-http-server:${{ steps.version.outputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-http-server:latest
+          push: true
