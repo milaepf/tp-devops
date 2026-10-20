@@ -23,9 +23,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-          cache: maven
-          cache-dependency-path: simpleapi/pom.xml
 
       # Construire l'application et exécuter les tests
       - name: Build and test with Maven
-        run: mvn --file simpleapi/pom.xml clean verify
+        run: mvn clean verify --file ./simpleapi/pom.xml 
