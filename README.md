@@ -234,3 +234,18 @@ La publication des images dans un registre en ligne permet de les partager et de
 - **Versionnement** : les tags permettent de distinguer différentes versions d'une application.
 - **Gain de temps** : il n'est pas nécessaire de reconstruire l'image sur chaque machine qui l'utilise.
 
+### 2-1 Qu’est-ce que les conteneurs de test ?
+
+Les conteneurs de test sont des conteneurs Docker lancés automatiquement pendant les tests afin de fournir les services nécessaires à leur exécution. Dans notre projet, Testcontainers permet notamment de démarrer une base de données PostgreSQL temporaire pour tester le backend dans un environnement isolé, sans avoir besoin d’installer ou de configurer manuellement une base de données sur la machine.
+
+### 2-2 Dans quel but doit-on utiliser des variables sécurisées ?
+
+Les variables sécurisées permettent de stocker des informations sensibles, comme des identifiants ou des jetons d’accès, sans les inscrire directement dans le code source ou dans le fichier de configuration. Elles limitent ainsi les risques de divulgation des informations confidentielles.
+
+### 2-3 Pourquoi avons-nous mis des besoins : build-and-test-backend sur ce projet ? Peut-être essaie sans ça, tu verras !
+
+La propriété needs: build-and-test-backend permet de définir une dépendance entre les jobs de GitHub Actions. Elle garantit que le job qui en dépend attend la fin du job build-and-test-backend et ne s’exécute que si celui-ci réussit. Sans cette dépendance, les deux jobs peuvent s’exécuter en parallèle. Les images Docker risqueraient alors d’être publiées même si les tests échouent. Cette dépendance permet donc de sécuriser le processus de déploiement en ne publiant les images que si les vérifications précédentes ont réussi.
+
+### 2-4 Dans quel but devons-nous pousser les images docker ?
+
+Pousser les images Docker sur un registre comme Docker Hub permet de les stocker, partager et distribuer facilement. Elles peuvent ensuite être récupérées et exécutées sur d’autres machines sans avoir à reconstruire les images à partir du code source. Cela facilite le déploiement de l’application et garantit que les différents environnements utilisent les mêmes images.
