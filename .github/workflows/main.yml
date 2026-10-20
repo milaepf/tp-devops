@@ -30,7 +30,7 @@ jobs:
 
       # Analyser la qualité et la sécurité du code avec SonarCloud
       - name: SonarCloud Analysis
-        run: mvn -B verify sonar:sonar -Dsonar.projectKey=milaepf_tp-devops -Dsonar.organization=milaepf -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{ secrets.SONAR_TOKEN }}  --file ./simpleapi/pom.xml
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=milaepf_tp-devops -Dsonar.organization=milaepf -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{ secrets.SONAR_TOKEN }}  --file ./simpleapi/pom.xml
 
 
   # Partie CD : construire et publier les images Docker
