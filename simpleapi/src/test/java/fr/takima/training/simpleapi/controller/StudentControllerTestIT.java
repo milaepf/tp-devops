@@ -1,4 +1,4 @@
-package fr.takima.training.sampleapplication.IT;
+package fr.takima.training.simpleapi.controller;
 
 import fr.takima.training.simpleapi.SimpleApiApplication;
 import org.junit.jupiter.api.Test;
