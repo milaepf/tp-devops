@@ -1,0 +1,18 @@
+# Images publiées sur Docker Hub
+dockerhub_username: "milaepf2"
+
+backend_image: "{{ dockerhub_username }}/tp-devops-simpleapi:latest"
+database_image: "{{ dockerhub_username }}/tp-devops-database:latest"
+proxy_image: "{{ dockerhub_username }}/tp-devops-http-server:latest"
+
+frontend_network: frontend-net
+backend_network: backend-net
+
+postgres_db: db
+postgres_user: usr
+postgres_password: mdp
+
+db_host: database
+db_port: "5432"
+backend_port: "8080"
+proxy_port: "80"

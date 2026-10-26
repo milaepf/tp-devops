@@ -1,0 +1,14 @@
+- name: Start Java API container
+  community.docker.docker_container:
+    name: backend
+    image: "{{ backend_image }}"
+    pull: true
+    state: started
+    restart_policy: unless-stopped
+    env:
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://{{ db_host }}:{{ db_port }}/{{ postgres_db }}"
+      SPRING_DATASOURCE_USERNAME: "{{ postgres_user }}"
+      SPRING_DATASOURCE_PASSWORD: "{{ postgres_password }}"
+    networks:
+      - name: "{{ frontend_network }}"
+      - name: "{{ backend_network }}"
