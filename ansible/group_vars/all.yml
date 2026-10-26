@@ -10,7 +10,7 @@ backend_network: backend-net
 
 postgres_db: db
 postgres_user: usr
-postgres_password: mdp
+postgres_password: pwd
 
 db_host: database
 db_port: "5432"
