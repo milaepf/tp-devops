@@ -41,6 +41,14 @@ services:
       - frontend-net
     depends_on:
       - backend
+      - frontend
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    networks:
+      - frontend-net
     restart: unless-stopped
 
 networks:
