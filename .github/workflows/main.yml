@@ -5,10 +5,11 @@ on:
   push:
     branches:
       - main
-      - develop
+      - dev
   pull_request:
 
 jobs:
+  # Partie CI : tester le backend
   test-backend:
     runs-on: ubuntu-24.04
 
@@ -20,18 +21,24 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '21'
           cache: maven
 
       # Construire l'application et exécuter les tests
       - name: Build and test with Maven
-        run: mvn clean verify --file ./simpleapi/pom.xml 
+        run: mvn clean verify --file ./simpleapi/pom.xml
 
       # Analyser la qualité et la sécurité du code avec SonarCloud
       - name: SonarCloud Analysis
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=milaepf_tp-devops -Dsonar.organization=milaepf -Dsonar.host.url=https://sonarcloud.io -Dsonar.token=${{ secrets.SONAR_TOKEN }}  --file ./simpleapi/pom.xml
-
+        run: >
+          mvn -B verify
+          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dsonar.projectKey=milaepf_tp-devops
+          -Dsonar.organization=milaepf
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+          --file ./simpleapi/pom.xml
 
   # Partie CD : construire et publier les images Docker
   build-and-push-docker-image:
@@ -77,3 +84,56 @@ jobs:
           context: ./http-server
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-http-server:latest
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+  # Partie CD : déployer sur le serveur distant avec Ansible
+  deploy:
+    needs: build-and-push-docker-image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+
+    steps:
+      # Récupérer le code du dépôt
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Installer Ansible
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+
+      # Installer la collection Docker utilisée par les rôles Ansible
+      - name: Install Ansible Docker collection
+        run: ansible-galaxy collection install community.docker
+
+      # Préparer l'accès SSH au serveur distant
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}
+          SERVER_HOST: mila.ambrosi.takima.school
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      # Préparer le mot de passe Ansible Vault
+      - name: Configure Ansible Vault
+        env:
+          VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+        run: |
+          printf '%s' "$VAULT_PASSWORD" > "$HOME/.vault_pass"
+          chmod 600 "$HOME/.vault_pass"
+
+      # Déployer les nouvelles images sur le serveur
+      - name: Deploy with Ansible
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: |
+          ansible-playbook \
+            -i ansible/inventories/setup.yml \
+            ansible/playbook.yml \
+            --vault-password-file "$HOME/.vault_pass" \
+            -e "dockerhub_username=$DOCKERHUB_USERNAME"

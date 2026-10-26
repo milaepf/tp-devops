@@ -1,0 +1,22 @@
+- name: Start PostgreSQL container
+  community.docker.docker_container:
+    name: database
+    image: "{{ database_image }}"
+    pull: true
+    state: started
+    restart_policy: unless-stopped
+    env:
+      POSTGRES_DB: "{{ postgres_db }}"
+      POSTGRES_USER: "{{ postgres_user }}"
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+    volumes:
+      - milaepf-db-data:/var/lib/postgresql/data
+    networks:
+      - name: "{{ backend_network }}"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"'
+      interval: 5s
+      timeout: 5s
+      retries: 10

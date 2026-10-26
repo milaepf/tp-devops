@@ -1,0 +1,11 @@
+- name: Déployer l'application sur le serveur
+  hosts: all
+  gather_facts: true
+  become: true
+
+  roles:
+    - docker
+    - network
+    - database
+    - backend
+    - proxy

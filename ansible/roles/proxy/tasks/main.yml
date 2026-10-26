@@ -1,0 +1,14 @@
+- name: Start Apache reverse proxy container
+  community.docker.docker_container:
+    name: httpd
+    image: "{{ proxy_image }}"
+    pull: true
+    state: started
+    restart_policy: unless-stopped
+    published_ports:
+      - "{{ proxy_port }}:80"
+    env:
+      BACK_NAME: backend
+      BACK_PORT: "{{ backend_port }}"
+    networks:
+      - name: "{{ frontend_network }}"
