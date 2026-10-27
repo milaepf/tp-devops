@@ -4,6 +4,7 @@ dockerhub_username: "milaepf2"
 backend_image: "{{ dockerhub_username }}/tp-devops-simpleapi:latest"
 database_image: "{{ dockerhub_username }}/tp-devops-database:latest"
 proxy_image: "{{ dockerhub_username }}/tp-devops-http-server:latest"
+frontend_image: "{{ dockerhub_username }}/tp-devops-frontend:latest"
 
 frontend_network: frontend-net
 backend_network: backend-net

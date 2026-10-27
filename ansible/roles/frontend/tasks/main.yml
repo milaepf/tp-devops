@@ -1,0 +1,9 @@
+- name: Run frontend container
+  community.docker.docker_container:
+    name: frontend
+    image: "{{ frontend_image }}"
+    state: started
+    restart_policy: unless-stopped
+    pull: true
+    networks:
+      - name: frontend-net

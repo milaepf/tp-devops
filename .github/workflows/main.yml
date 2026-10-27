@@ -85,6 +85,13 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-http-server:latest
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
+      - name: Build image and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-frontend:latest
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
   # Partie CD : déployer sur le serveur distant avec Ansible
   deploy:
     needs: build-and-push-docker-image
