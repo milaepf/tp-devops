@@ -12,3 +12,4 @@
       BACK_PORT: "{{ backend_port }}"
     networks:
       - name: "{{ frontend_network }}"
+      - name: "{{ backend_network }}"
